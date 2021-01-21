@@ -5,6 +5,7 @@ Player class
 import os
 import pygame
 import level
+from rope import Rope
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, level=None):
@@ -34,18 +35,54 @@ class Player(pygame.sprite.Sprite):
 
         self.level = level
 
+        self.rope = None
+        self.rope_offset = pygame.Vector2(self.rect.x + self.rect.width, self.rect.y + self.rect.height // 2)
+
+    @property
+    def x(self):
+        return self.rect.x
+
+    @x.setter
+    def x(self, val):
+        self.rect.x = val
+
+    @property
+    def y(self):
+        return self.rect.y
+
+    @y.setter
+    def y(self, val):
+        self.rect.y = val
+
+    def add(groups):
+        super().add(groups)
+        self.add_children(groups)
+
+    def remove(groups):
+        super().remove(groups)
+        self.remove_children(gruops)
+
+    def add_children(groups):
+        self.head_sprite.add(groups)
+
+    def remove_children(groups):
+        self.head_sprite.remove(groups)
+
     def update(self):
         self.move()
         self.apply_gravity()
         self.handle_hit_platform()
         self.decrement_invicible_counter()
         self.handle_hit_enemy()
+        self.update_rope_offset()
 
     def move(self):
         self.prev_rect.x = self.rect.x
         self.prev_rect.y = self.rect.y
-        self.rect.x = int(self.rect.x + self.speed['x'])
-        self.rect.y = int(self.rect.y + self.speed['y'])
+        x_offset = int(self.speed['x'])
+        y_offset = int(self.speed['y'])
+        self.rect.x += x_offset
+        self.rect.y += y_offset
 
         if self.speed['x'] != 0:
             self.__animate_walking(to_left=self.speed['x'] < 0)
@@ -63,11 +100,24 @@ class Player(pygame.sprite.Sprite):
     def apply_gravity(self):
         self.add_speed(0, 2)
 
+    def update_rope_offset(self):
+        x_offset = self.rect.width
+        y_offset = self.rect.height // 2
+        self.rope_offset.x = self.rect.x + x_offset
+        self.rope_offset.y = self.rect.y + y_offset
+
     def jump(self):
         if self.is_jumping:
             return
         self.set_speed(self.speed['x'], - 25)
         self.is_jumping = True
+
+    def launch_rope(self, target):
+        self.rope = Rope(self.rope_offset, target, self.level)
+        return self.rope
+
+    def remove_rope(self):
+        self.rope = None
 
     def handle_hit_platform(self):
         if not self.level or not self.level.platforms:
