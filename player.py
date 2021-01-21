@@ -5,7 +5,7 @@ Player class
 import os
 import pygame
 import level
-from rope import Rope
+from rope.rope import Rope
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, level=None):
