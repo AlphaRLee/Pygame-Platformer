@@ -9,7 +9,7 @@ from platform import Platform
 from enemy import Enemy
 from pygame import Rect
 from colors import ALPHA
-
+from physics import FPS, DT
 
 """
 SETUP
@@ -56,7 +56,7 @@ def main():
     enemies.draw(world)
     ropes.draw(world)
     pygame.display.flip()
-    clock.tick(fps)
+    clock.tick(FPS)
 
 
 def quit():
@@ -91,8 +91,6 @@ def on_mouse_up():
 
 clock = pygame.time.Clock()
 pygame.init()
-
-fps = 40  # Frames per second
 
 screen_width, screen_height = 960, 720
 world = pygame.display.set_mode((screen_width, screen_height))

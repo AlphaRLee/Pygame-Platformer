@@ -5,11 +5,14 @@ Player class
 import os
 import pygame
 import level
+from physics import DT, GRAVITY
 from rope.rope import Rope
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, level=None):
         pygame.sprite.Sprite.__init__(self)
+
+        self.mass = 10
 
         self.walk_image_count = 4
         self.walk_images = []
@@ -17,6 +20,7 @@ class Player(pygame.sprite.Sprite):
         self.walk_image_duration = 4
 
         self.speed = { 'x': 0, 'y': 0 }
+        self.has_gravity = True
     
         self.walk_speed = 10
 
@@ -69,20 +73,18 @@ class Player(pygame.sprite.Sprite):
         self.head_sprite.remove(groups)
 
     def update(self):
-        self.move()
+        self.set_position(self.speed['x'], self.speed['y'])
         self.apply_gravity()
         self.handle_hit_platform()
         self.decrement_invicible_counter()
         self.handle_hit_enemy()
         self.update_rope_offset()
 
-    def move(self):
+    def set_position(self, x: int, y: int):
         self.prev_rect.x = self.rect.x
         self.prev_rect.y = self.rect.y
-        x_offset = int(self.speed['x'])
-        y_offset = int(self.speed['y'])
-        self.rect.x += x_offset
-        self.rect.y += y_offset
+        self.rect.x += int(x)
+        self.rect.y += int(y)
 
         if self.speed['x'] != 0:
             self.__animate_walking(to_left=self.speed['x'] < 0)
@@ -98,13 +100,13 @@ class Player(pygame.sprite.Sprite):
         self.speed['y'] += y
 
     def apply_gravity(self):
-        self.add_speed(0, 2)
+        if self.has_gravity:
+            self.add_speed(0, self.mass * GRAVITY * DT)
 
     def update_rope_offset(self):
-        x_offset = self.rect.width
-        y_offset = self.rect.height // 2
-        self.rope_offset.x = self.rect.x + x_offset
-        self.rope_offset.y = self.rect.y + y_offset
+        if not self.rope:
+            return
+        self.rope.rope_holder.move_to_owner()
 
     def jump(self):
         if self.is_jumping:
@@ -113,11 +115,12 @@ class Player(pygame.sprite.Sprite):
         self.is_jumping = True
 
     def launch_rope(self, target):
-        self.rope = Rope(self.rope_offset, target, self.level)
+        self.rope = Rope(self, (self.rect.width, self.rect.height // 2), target, self.level)
         return self.rope
 
     def remove_rope(self):
         self.rope = None
+        self.has_gravity = True
 
     def handle_hit_platform(self):
         if not self.level or not self.level.platforms:
@@ -129,6 +132,11 @@ class Player(pygame.sprite.Sprite):
                 self.set_speed(self.speed['x'], 0)
                 self.rect.y = platform.rect.y - self.rect.height
                 self.is_jumping = False
+                self.has_gravity = False
+            else:
+                self.has_gravity = True
+        if len(hit_platforms) == 0:
+            self.has_gravity = True
 
     # Check if the player had hit any enemies
     def handle_hit_enemy(self):

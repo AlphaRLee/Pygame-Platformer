@@ -1,0 +1,4 @@
+FPS = 40
+DT = 1 / FPS
+
+GRAVITY = 8
