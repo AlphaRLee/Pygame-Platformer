@@ -18,8 +18,6 @@ class RopeHolder:
         self.y = self.owner.y + self.offset[1]
 
     def rope_set_position(self, x, y):
-        print("!!! rope_set_position old x, y: ", self.owner.x, self.owner.y, self.owner.has_gravity) # FIXME: Delete
         self.x = x
         self.y = y
         self.owner.set_position(x - self.offset[0], y - self.offset[1])
-        print("!!!                   new x, y: ", self.owner.x, self.owner.y) # FIXME: Delete

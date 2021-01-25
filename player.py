@@ -9,6 +9,7 @@ from physics import DT, GRAVITY
 from rope.rope import Rope
 
 class Player(pygame.sprite.Sprite):
+
     def __init__(self, level=None):
         pygame.sprite.Sprite.__init__(self)
 
@@ -132,11 +133,6 @@ class Player(pygame.sprite.Sprite):
                 self.set_speed(self.speed['x'], 0)
                 self.rect.y = platform.rect.y - self.rect.height
                 self.is_jumping = False
-                self.has_gravity = False
-            else:
-                self.has_gravity = True
-        if len(hit_platforms) == 0:
-            self.has_gravity = True
 
     # Check if the player had hit any enemies
     def handle_hit_enemy(self):

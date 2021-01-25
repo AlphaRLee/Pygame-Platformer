@@ -87,7 +87,7 @@ class Rope(pygame.sprite.Sprite):
             self.rope_holder.on_anchor()
     
     def anchor_to_body(self) -> pygame.Vector2:
-        return pygame.Vector2(self.rope_holder.offset) - self.anchor_point
+        return pygame.Vector2(self.rope_holder.x, self.rope_holder.y) - self.anchor_point
 
         
 

@@ -22,7 +22,7 @@ class SwingPhysics:
     # Calculate theta (angle from anchor point to body) in radians
     def calculate_theta(self):
         self.rope_length, self.theta = self.rope.anchor_to_body().as_polar()
-        
+    
         # Convert azimuth (-180 to 180, 0 = x-axis, +y = down) to theta (-180 to 180, 0 = down, +theta = to the right)
         # 0 -> +90
         # 90 -> 0
@@ -34,18 +34,20 @@ class SwingPhysics:
 
     def calculate_theta_velocity(self):
         self.gravity_force = - self.rope_holder.mass * GRAVITY
-        self.theta_velocity += self.gravity_force * math.sin(self.theta) / self.rope_length * DT
+        self.theta_velocity += self.gravity_force * math.sin(self.theta) / self.rope_length * DT * 0.00001
 
     def update(self):
         self.calculate_theta()
         self.calculate_theta_velocity()
         self.update_theta()
-        self.update_rope_holder_position()
+        self.update_rope_holder_position() 
 
     def update_theta(self):
         self.theta += self.theta_velocity
 
     def update_rope_holder_position(self):
+        print("!!! update_rope_holder_position t: ", math.degrees(self.theta), "tv: ", math.degrees(self.theta_velocity)) # FIXME: delete
+        print("!!!   ")
         x = self.rope.anchor_point.x + self.rope_length * math.sin(self.theta)
         y = self.rope.anchor_point.y + self.rope_length * math.cos(self.theta)
         self.rope_holder.rope_set_position(x, y)
