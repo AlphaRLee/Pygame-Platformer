@@ -31,6 +31,7 @@ class Rope(pygame.sprite.Sprite):
         self.launch_direction = pygame.Vector2(target[0] - self.rope_holder.x, target[1] - self.rope_holder.y).normalize()
 
         self.swing_physics = None
+        self.can_swing = False
 
     def add(groups):
         super().add(groups)
@@ -50,7 +51,7 @@ class Rope(pygame.sprite.Sprite):
         if self.is_launching:
             self.launch()
 
-        if self.swing_physics:
+        if self.swing_physics and self.can_swing:
             self.swing_physics.update()
 
         self.draw()
@@ -85,6 +86,7 @@ class Rope(pygame.sprite.Sprite):
         if self.is_anchored:
             self.swing_physics = SwingPhysics(self, self.rope_holder)
             self.rope_holder.on_anchor()
+            self.can_swing = True
     
     def anchor_to_body(self) -> pygame.Vector2:
         return pygame.Vector2(self.rope_holder.x, self.rope_holder.y) - self.anchor_point

@@ -10,6 +10,10 @@ class RopeHolder:
     def mass(self):
         return self.owner.mass
 
+    @property
+    def speed(self):
+        return (self.owner.speed['x'], self.owner.speed['y'])
+
     def on_anchor(self):
         self.owner.has_gravity = False
 
@@ -18,6 +22,5 @@ class RopeHolder:
         self.y = self.owner.y + self.offset[1]
 
     def rope_set_position(self, x, y):
-        self.x = x
-        self.y = y
-        self.owner.set_position(x - self.offset[0], y - self.offset[1])
+        self.owner.set_speed(x - self.x, y - self.y)
+        

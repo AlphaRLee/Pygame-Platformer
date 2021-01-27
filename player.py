@@ -74,23 +74,26 @@ class Player(pygame.sprite.Sprite):
         self.head_sprite.remove(groups)
 
     def update(self):
-        self.set_position(self.speed['x'], self.speed['y'])
+        self.add_to_position(self.speed['x'], self.speed['y'])
         self.apply_gravity()
         self.handle_hit_platform()
         self.decrement_invicible_counter()
         self.handle_hit_enemy()
         self.update_rope_offset()
 
-    def set_position(self, x: int, y: int):
+    def set_position(self, x, y):
         self.prev_rect.x = self.rect.x
         self.prev_rect.y = self.rect.y
-        self.rect.x += int(x)
-        self.rect.y += int(y)
+        self.rect.x = int(x)
+        self.rect.y = int(y)
 
         if self.speed['x'] != 0:
             self.__animate_walking(to_left=self.speed['x'] < 0)
         else:
             self.walk_frame = 0
+
+    def add_to_position(self, x, y):
+        self.set_position(self.rect.x + x, self.rect.y + y)
 
     def set_speed(self, x, y):
         self.speed['x'] = x
@@ -117,11 +120,29 @@ class Player(pygame.sprite.Sprite):
 
     def launch_rope(self, target):
         self.rope = Rope(self, (self.rect.width, self.rect.height // 2), target, self.level)
+        self.set_speed(0, 0) # TODO: Calculate the tangent speed to rope
         return self.rope
 
     def remove_rope(self):
         self.rope = None
         self.has_gravity = True
+        self.set_speed(0, 0) # TODO: Calculate the rope's last speed and apply it here
+
+    def enable_rope_swinging(self):
+        if not self.rope:
+            return
+
+        self.rope.can_swing = True
+        self.has_gravity = False
+        # self.set_speed(0, 0)
+
+    def disable_rope_swinging(self):
+        if not self.rope:
+            return
+
+        self.rope.can_swing = False
+        self.has_gravity = True
+        # self.set_speed(0, 0)
 
     def handle_hit_platform(self):
         if not self.level or not self.level.platforms:
@@ -133,6 +154,9 @@ class Player(pygame.sprite.Sprite):
                 self.set_speed(self.speed['x'], 0)
                 self.rect.y = platform.rect.y - self.rect.height
                 self.is_jumping = False
+                self.enable_rope_swinging()
+        if not hit_platforms and self.rope:
+            self.disable_rope_swinging()
 
     # Check if the player had hit any enemies
     def handle_hit_enemy(self):

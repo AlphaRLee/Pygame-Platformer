@@ -16,9 +16,10 @@ class SwingPhysics:
         self.rope_holder = rope_holder
 
         self.down_vector = pygame.Vector2(0, 1)
-        self.theta_velocity = 0
         self.calculate_theta()
-    
+        self.calculate_instant_theta_velocity()
+
+
     # Calculate theta (angle from anchor point to body) in radians
     def calculate_theta(self):
         self.rope_length, self.theta = self.rope.anchor_to_body().as_polar()
@@ -34,7 +35,14 @@ class SwingPhysics:
 
     def calculate_theta_velocity(self):
         self.gravity_force = - self.rope_holder.mass * GRAVITY
-        self.theta_velocity += self.gravity_force * math.sin(self.theta) / self.rope_length * DT * 0.00001
+        self.theta_velocity += self.gravity_force * math.sin(self.theta) / self.rope_length * DT * 5
+
+    # Calculate the theta v at the exact instant, not an iteration over time
+    def calculate_instant_theta_velocity(self):
+        speed = pygame.Vector2(self.rope_holder.speed)
+        anchor_to_body_direction = self.rope.anchor_to_body().normalize()
+        parallel_speed = speed.dot(anchor_to_body_direction) * anchor_to_body_direction  # Project the speed along the anchor_to_body direction
+        self.theta_velocity = (speed - parallel_speed).magnitude() / self.rope_length
 
     def update(self):
         self.calculate_theta()
@@ -46,8 +54,6 @@ class SwingPhysics:
         self.theta += self.theta_velocity
 
     def update_rope_holder_position(self):
-        print("!!! update_rope_holder_position t: ", math.degrees(self.theta), "tv: ", math.degrees(self.theta_velocity)) # FIXME: delete
-        print("!!!   ")
         x = self.rope.anchor_point.x + self.rope_length * math.sin(self.theta)
         y = self.rope.anchor_point.y + self.rope_length * math.cos(self.theta)
         self.rope_holder.rope_set_position(x, y)
