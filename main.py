@@ -98,17 +98,18 @@ def on_key_down(key):
         quit()
 
     if key == pygame.K_LEFT or key == ord('a'):
-        player.add_speed(-player.walk_speed, 0)
+        # player.add_speed(-player.walk_speed, 0)
+        player.walk(-player.walk_speed)
     if key == pygame.K_RIGHT or key == ord('d'):
-        player.add_speed(player.walk_speed, 0)
+        player.walk(player.walk_speed)
     if key == pygame.K_UP or key == ord('w'):
         player.jump()
 
 def on_key_up(key):
     if key == pygame.K_LEFT or key == ord('a'):
-        player.add_speed(player.walk_speed, 0)
+        player.walk(player.walk_speed)
     if key == pygame.K_RIGHT or key == ord('d'):
-        player.add_speed(-player.walk_speed, 0)
+        player.walk(-player.walk_speed)
 
 def on_mouse_down():
     ropes.add(player.launch_rope(pygame.mouse.get_pos()))

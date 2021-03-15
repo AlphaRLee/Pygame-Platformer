@@ -12,10 +12,11 @@ class Player(pygame.sprite.Sprite):
     # def __init__(self, level=None):
     def __init__(self, level=None, temp_screen=None):  # FIXME: Delete
         pygame.sprite.Sprite.__init__(self)
-
-        self.ROPE_RELEASE_KEY = 'ROPE_RELEASE'
-
         self.temp_screen = temp_screen  # FIXME: Delete
+
+        self.WALK_KEY = 'WALK'
+        self.ROPE_RELEASE_KEY = 'ROPE_RELEASE'
+        
         self.mass = 10
 
         self.walk_image_count = 4
@@ -25,8 +26,8 @@ class Player(pygame.sprite.Sprite):
 
         self.speed = { 'x': 0, 'y': 0 }
 
-        # Environment speed is defined by speed not dierctly under player's control (e.g. momentum from releasing the rope)
-        # TODO: Integrate gravity into this to be cohesive
+        # Environment speed (poorly named) is different individual speed factors (e.g. walking, momentum from releasing swing)
+        # TODO: Integrate swinging and gravity into env speed
         self.env_speeds = {}
 
         self.has_gravity = True
@@ -90,6 +91,7 @@ class Player(pygame.sprite.Sprite):
         self.decrement_invicible_counter()
         self.handle_hit_enemy()
         self.update_rope_offset()
+        self.animate_walking()
 
     def update_prev_rect(self):
         self.prev_rect.x = self.rect.x
@@ -98,11 +100,6 @@ class Player(pygame.sprite.Sprite):
     def set_position(self, x, y):
         self.rect.x = int(x)
         self.rect.y = int(y)
-
-        if self.speed['x'] != 0:
-            self.animate_walking(to_left=self.speed['x'] < 0)
-        else:
-            self.walk_frame = 0
 
     def add_to_position(self, x, y):
         self.set_position(self.rect.x + x, self.rect.y + y)
@@ -125,6 +122,14 @@ class Player(pygame.sprite.Sprite):
     def set_env_speed(self, env_key, x, y):
         self.env_speeds[env_key] = {'x': x, 'y': y}
 
+    # Add to an existing env speed. Creates a new env speed if none exists
+    def add_env_speed(self, env_key, x, y):
+        if not env_key in self.env_speeds:
+            self.set_env_speed(env_key, 0, 0)
+
+        env_speed = self.get_env_speed(env_key)
+        self.set_env_speed(env_key, env_speed['x'] + x, env_speed['y'])
+
     # Delete an environment speed. Does nothing if key is not found
     def remove_env_speed(self, env_key):
         if env_key in self.env_speeds:
@@ -145,6 +150,10 @@ class Player(pygame.sprite.Sprite):
         if not self.rope:
             return
         self.rope.rope_holder.move_to_owner()
+
+    def walk(self, x):
+        self.add_env_speed(self.WALK_KEY, x, 0)
+
 
     def jump(self, jump_speed=-25, check_is_jumping=True):
         if check_is_jumping and self.is_jumping:
@@ -223,13 +232,18 @@ class Player(pygame.sprite.Sprite):
             self.health = 0  # Explicitly set to zero (disallow negative HP)
             print("Uh oh, you died!")
 
-    def animate_walking(self, to_left=False):
+    def animate_walking(self):
+        walk_speed = self.get_env_speed(self.WALK_KEY)
+        if not walk_speed or not walk_speed['x']:
+            self.walk_frame = 0
+            return
+        
         self.walk_frame += 1
 
         # Reset walk_frame every walk_image_count * walk_image_duration frames (i.e. every 4*4 = 16 frames)
         self.walk_frame %= self.walk_image_count * self.walk_image_duration
         # Every walk animation lasts for several frame. Do integer division to select the correct frame
         self.image = self.walk_images[self.walk_frame // self.walk_image_duration]
-        if to_left:
+        if walk_speed['x'] < 0:
             self.image = pygame.transform.flip(self.image, True, False)
 
