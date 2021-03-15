@@ -9,10 +9,13 @@ from physics import DT, GRAVITY
 from rope.rope import Rope
 
 class Player(pygame.sprite.Sprite):
-
-    def __init__(self, level=None):
+    # def __init__(self, level=None):
+    def __init__(self, level=None, temp_screen=None):  # FIXME: Delete
         pygame.sprite.Sprite.__init__(self)
 
+        self.ROPE_RELEASE_KEY = 'ROPE_RELEASE'
+
+        self.temp_screen = temp_screen  # FIXME: Delete
         self.mass = 10
 
         self.walk_image_count = 4
@@ -21,6 +24,11 @@ class Player(pygame.sprite.Sprite):
         self.walk_image_duration = 4
 
         self.speed = { 'x': 0, 'y': 0 }
+
+        # Environment speed is defined by speed not dierctly under player's control (e.g. momentum from releasing the rope)
+        # TODO: Integrate gravity into this to be cohesive
+        self.env_speeds = {}
+
         self.has_gravity = True
     
         self.walk_speed = 10
@@ -59,36 +67,40 @@ class Player(pygame.sprite.Sprite):
     def y(self, val):
         self.rect.y = val
 
-    def add(groups):
+    def add(self, groups):
         super().add(groups)
         self.add_children(groups)
 
-    def remove(groups):
+    def remove(self, groups):
         super().remove(groups)
-        self.remove_children(gruops)
+        self.remove_children(groups)
 
-    def add_children(groups):
+    def add_children(self, groups):
         self.head_sprite.add(groups)
 
-    def remove_children(groups):
+    def remove_children(self, groups):
         self.head_sprite.remove(groups)
 
     def update(self):
+        self.update_prev_rect()
         self.add_to_position(self.speed['x'], self.speed['y'])
+        self.apply_env_speeds()
         self.apply_gravity()
-        self.handle_hit_platform()
+        self.handle_hit_platforms()
         self.decrement_invicible_counter()
         self.handle_hit_enemy()
         self.update_rope_offset()
 
-    def set_position(self, x, y):
+    def update_prev_rect(self):
         self.prev_rect.x = self.rect.x
         self.prev_rect.y = self.rect.y
+
+    def set_position(self, x, y):
         self.rect.x = int(x)
         self.rect.y = int(y)
 
         if self.speed['x'] != 0:
-            self.__animate_walking(to_left=self.speed['x'] < 0)
+            self.animate_walking(to_left=self.speed['x'] < 0)
         else:
             self.walk_frame = 0
 
@@ -103,6 +115,28 @@ class Player(pygame.sprite.Sprite):
         self.speed['x'] += x
         self.speed['y'] += y
 
+    def get_env_speed(self, env_key):
+        if env_key in self.env_speeds:
+            return self.env_speeds[env_key]
+        else:
+            return None
+
+    # Add an environment speed.
+    def set_env_speed(self, env_key, x, y):
+        self.env_speeds[env_key] = {'x': x, 'y': y}
+
+    # Delete an environment speed. Does nothing if key is not found
+    def remove_env_speed(self, env_key):
+        if env_key in self.env_speeds:
+            del self.env_speeds[env_key]
+
+    def apply_env_speeds(self):
+        total_speed = {'x': 0, 'y': 0}
+        for speed in self.env_speeds.values():
+            total_speed['x'] += speed['x']
+            total_speed['y'] += speed['y']
+        self.add_to_position(total_speed['x'], total_speed['y'])
+
     def apply_gravity(self):
         if self.has_gravity:
             self.add_speed(0, self.mass * GRAVITY * DT)
@@ -112,59 +146,65 @@ class Player(pygame.sprite.Sprite):
             return
         self.rope.rope_holder.move_to_owner()
 
-    def jump(self):
-        if self.is_jumping:
+    def jump(self, jump_speed=-25, check_is_jumping=True):
+        if check_is_jumping and self.is_jumping:
             return
-        self.set_speed(self.speed['x'], - 25)
+        self.set_speed(self.speed['x'], jump_speed)
         self.is_jumping = True
 
     def launch_rope(self, target):
-        self.rope = Rope(self, (self.rect.width, self.rect.height // 2), target, self.level)
-        self.set_speed(0, 0) # TODO: Calculate the tangent speed to rope
+        # self.rope = Rope(self, (self.rect.width, self.rect.height // 2), target, self.level)
+        self.rope = Rope(self, (self.rect.width, self.rect.height // 2), target, self.level, temp_screen=self.temp_screen)  # FIXME: delete
+        self.set_speed(0, 0)  # TODO: Calculate the tangent speed to rope
         return self.rope
 
     def remove_rope(self):
         self.rope = None
         self.has_gravity = True
-        self.set_speed(0, 0) # TODO: Calculate the rope's last speed and apply it here
+        self.set_env_speed(self.ROPE_RELEASE_KEY, self.speed['x'], self.speed['y'])
+        self.set_speed(0, 0)
 
-    def enable_rope_swinging(self):
-        if not self.rope:
-            return
-
-        self.rope.can_swing = True
-        self.has_gravity = False
-        # self.set_speed(0, 0)
-
-    def disable_rope_swinging(self):
-        if not self.rope:
-            return
-
-        self.rope.can_swing = False
-        self.has_gravity = True
-        # self.set_speed(0, 0)
-
-    def handle_hit_platform(self):
+    def handle_hit_platforms(self):
         if not self.level or not self.level.platforms:
             return
         
         hit_platforms = pygame.sprite.spritecollide(self, self.level.platforms, dokill=False)
         for platform in hit_platforms:
-            if self.prev_rect.bottom <= platform.rect.y:
-                self.set_speed(self.speed['x'], 0)
-                self.rect.y = platform.rect.y - self.rect.height
-                self.is_jumping = False
-                self.enable_rope_swinging()
-        if not hit_platforms and self.rope:
-            self.disable_rope_swinging()
+            self.on_hit_platform(platform)
+
+    def on_hit_platform(self, platform):
+        if self.prev_rect.y + self.prev_rect.height > platform.rect.y:
+            return
+
+        self.set_speed(self.speed['x'], 0)
+        self.rect.y = platform.rect.y - self.rect.height
+        self.is_jumping = False
+        self.reduce_rope_release_speed()
+
+    # Kill any momentum gained from releasing the rope        
+    # Y speed is always set to zero
+    # If x speed is currently less than remove_threshold, the rope speed is removed altogether
+    def reduce_rope_release_speed(self, remove_threshold=1, reduce_factor=0.7):
+        rope_release_speed = self.get_env_speed(self.ROPE_RELEASE_KEY)
+        if not rope_release_speed:
+            return
+
+        if abs(rope_release_speed['x']) < remove_threshold:
+            self.remove_env_speed(self.ROPE_RELEASE_KEY)
+
+        self.set_env_speed(self.ROPE_RELEASE_KEY, rope_release_speed['x'] * reduce_factor, 0)
 
     # Check if the player had hit any enemies
     def handle_hit_enemy(self):
         if not self.level or not self.level.enemies or self.invincible_counter > 0:
             return
         
-        if pygame.sprite.spritecollideany(self, self.level.enemies):
-            self.take_damage(1)
+        for enemy in pygame.sprite.spritecollide(self, self.level.enemies, dokill=False):
+            if self.rect.y + self.rect.height <= enemy.rect.y + 10:
+                enemy.kill()
+                self.jump(jump_speed=-20, check_is_jumping=False)
+            else:
+                self.take_damage(1)
 
     def decrement_invicible_counter(self):
         if self.invincible_counter > 0: 
@@ -183,7 +223,7 @@ class Player(pygame.sprite.Sprite):
             self.health = 0  # Explicitly set to zero (disallow negative HP)
             print("Uh oh, you died!")
 
-    def __animate_walking(self, to_left=False):
+    def animate_walking(self, to_left=False):
         self.walk_frame += 1
 
         # Reset walk_frame every walk_image_count * walk_image_duration frames (i.e. every 4*4 = 16 frames)

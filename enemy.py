@@ -24,11 +24,9 @@ class Enemy(pygame.sprite.Sprite):
         
         self.speed = { 'x': self.walk_speed, 'y': 0 }
     
-        # TODO: Accept a dynamic load of enemy files
         for i in range(self.walk_image_count):
-            img = pygame.image.load(os.path.join('images', 'enemy_walk' + str(i) + '.png'))
+            img = pygame.image.load(os.path.join('images', 'enemy_walk' + str(i) + '.png')).convert_alpha()
             img = pygame.transform.scale(img, (self.width, self.height))
-            img.convert_alpha()
             img.set_colorkey(ALPHA)
             self.walk_images.append(img)
 
@@ -42,7 +40,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.y += self.speed['y']
 
         if self.speed['x'] != 0:
-            self.__animate_walking(to_left=self.speed['x'] < 0)
+            self.animate_walking(to_left=self.speed['x'] < 0)
         else:
             self.walk_frame = 0
 
@@ -60,7 +58,7 @@ class Enemy(pygame.sprite.Sprite):
         elif self.pace_counter == self.max_pace_counter // 2:
             self.control(- self.walk_speed * 2, 0)
 
-    def __animate_walking(self, to_left=False):
+    def animate_walking(self, to_left=False):
         self.walk_frame += 1
         self.walk_frame %= self.walk_image_count * self.walk_image_duration
         self.image = self.walk_images[self.walk_frame // self.walk_image_duration]

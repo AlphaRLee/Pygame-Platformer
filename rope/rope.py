@@ -4,10 +4,13 @@ from rope.swing_physics import SwingPhysics
 from colors import ALPHA
 
 class Rope(pygame.sprite.Sprite):
-    def __init__(self, owner, offset, target, level, launch_speed=50, max_distance=800):
+    # def __init__(self, owner, offset, target, level, launch_speed=50, max_distance=800):
+    def __init__(self, owner, offset, target, level, launch_speed=50, max_distance=800, temp_screen=None):  # FIXME: delete
         pygame.sprite.Sprite.__init__(self)
+        self.temp_screen = temp_screen # FIXME: delete
         self.owner = owner
-        self.rope_holder = RopeHolder(owner, offset)
+        # self.rope_holder = RopeHolder(owner, offset)
+        self.rope_holder = RopeHolder(owner, offset, temp_screen) # FIXME: delete
         self.level = level
 
         self.launch_speed = launch_speed
@@ -33,18 +36,18 @@ class Rope(pygame.sprite.Sprite):
         self.swing_physics = None
         self.can_swing = False
 
-    def add(groups):
+    def add(self, groups):
         super().add(groups)
         self.add_children(groups)
 
-    def remove(groups):
+    def remove(self, groups):
         super().remove(groups)
-        self.remove_children(gruops)
+        self.remove_children(groups)
 
-    def add_children(groups):
+    def add_children(self, groups):
         self.head_sprite.add(groups)
 
-    def remove_children(groups):
+    def remove_children(self, groups):
         self.head_sprite.remove(groups)
 
     def update(self):
