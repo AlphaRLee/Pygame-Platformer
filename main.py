@@ -47,8 +47,7 @@ level = Level(levels_data[0])
 platforms = level.spawn_platforms(platform_images)
 enemies = level.spawn_enemies()
 
-# player = Player(level)
-player = Player(level, temp_screen = world)  # FIXME: delete
+player = Player(level)
 player.rect.x = 200
 player.rect.y = 500
 players = pygame.sprite.Group()
@@ -98,7 +97,6 @@ def on_key_down(key):
         quit()
 
     if key == pygame.K_LEFT or key == ord('a'):
-        # player.add_speed(-player.walk_speed, 0)
         player.walk(-player.walk_speed)
     if key == pygame.K_RIGHT or key == ord('d'):
         player.walk(player.walk_speed)
@@ -118,7 +116,6 @@ def on_mouse_up():
     if player.rope:
         ropes.remove(player.rope)
         player.remove_rope()
-
 
 
 while True:

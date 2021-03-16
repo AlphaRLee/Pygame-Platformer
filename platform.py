@@ -1,3 +1,4 @@
+import math
 import pygame
 from colors import ALPHA
 
@@ -22,7 +23,7 @@ class Platform(pygame.sprite.Sprite):
         ]
 
         # TODO: Fix assumption where width is always a multiple of scaled_width
-        for i in range(1, self.rect.width // scaled_width - 1):
+        for i in range(1, math.ceil(self.rect.width / scaled_width) - 1):
             img = pygame.transform.scale(self.center_images[(i - 1) % len(self.center_images)], (scaled_width, self.rect.height))
             x = i * scaled_width
             blits_data.append((img, (x, 0, scaled_width, self.rect.height)))

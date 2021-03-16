@@ -9,10 +9,8 @@ from physics import DT, GRAVITY
 from rope.rope import Rope
 
 class Player(pygame.sprite.Sprite):
-    # def __init__(self, level=None):
-    def __init__(self, level=None, temp_screen=None):  # FIXME: Delete
+    def __init__(self, level=None):
         pygame.sprite.Sprite.__init__(self)
-        self.temp_screen = temp_screen  # FIXME: Delete
 
         self.WALK_KEY = 'WALK'
         self.ROPE_RELEASE_KEY = 'ROPE_RELEASE'
@@ -162,9 +160,8 @@ class Player(pygame.sprite.Sprite):
         self.is_jumping = True
 
     def launch_rope(self, target):
-        # self.rope = Rope(self, (self.rect.width, self.rect.height // 2), target, self.level)
-        self.rope = Rope(self, (self.rect.width, self.rect.height // 2), target, self.level, temp_screen=self.temp_screen)  # FIXME: delete
-        self.set_speed(0, 0)  # TODO: Calculate the tangent speed to rope
+        self.rope = Rope(self, (self.rect.width, self.rect.height // 2), target, self.level)
+        self.set_speed(0, 0)
         return self.rope
 
     def remove_rope(self):
@@ -193,7 +190,7 @@ class Player(pygame.sprite.Sprite):
     # Kill any momentum gained from releasing the rope        
     # Y speed is always set to zero
     # If x speed is currently less than remove_threshold, the rope speed is removed altogether
-    def reduce_rope_release_speed(self, remove_threshold=1, reduce_factor=0.7):
+    def reduce_rope_release_speed(self, remove_threshold=1, reduce_factor=0.4):
         rope_release_speed = self.get_env_speed(self.ROPE_RELEASE_KEY)
         if not rope_release_speed:
             return
@@ -201,7 +198,7 @@ class Player(pygame.sprite.Sprite):
         if abs(rope_release_speed['x']) < remove_threshold:
             self.remove_env_speed(self.ROPE_RELEASE_KEY)
 
-        self.set_env_speed(self.ROPE_RELEASE_KEY, rope_release_speed['x'] * reduce_factor, 0)
+        self.set_env_speed(self.ROPE_RELEASE_KEY, int(rope_release_speed['x'] * reduce_factor), 0)
 
     # Check if the player had hit any enemies
     def handle_hit_enemy(self):
@@ -240,8 +237,8 @@ class Player(pygame.sprite.Sprite):
         
         self.walk_frame += 1
 
-        # Reset walk_frame every walk_image_count * walk_image_duration frames (i.e. every 4*4 = 16 frames)
-        self.walk_frame %= self.walk_image_count * self.walk_image_duration
+        # Reset walk_frame every walk_image_count * walk_image_duration frames (i.e. every 4 * 4 = 16 frames)
+        self.walk_frame %= self.walk_image_count * self.walk_image_duration 
         # Every walk animation lasts for several frame. Do integer division to select the correct frame
         self.image = self.walk_images[self.walk_frame // self.walk_image_duration]
         if walk_speed['x'] < 0:
